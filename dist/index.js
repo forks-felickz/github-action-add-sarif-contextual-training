@@ -14,13 +14,22 @@ const API_URL_PATH = '/api/v1/trial';
 const PARTNER_ID = 'github-sarif-action';
 
 async function getTrainingData(mappingListId, mappingKey, languageKey) {
+
+    // create an list of values to populate into the Id param of the DI linking API
+    let idValue = [PARTNER_ID];
+    if (process.env.GITHUB_REPOSITORY) {
+        const githubOwner = process.env.GITHUB_REPOSITORY.split('/')[0];
+        idValue.push(githubOwner);
+    }
+
     let url;
     if (languageKey) {
-        url = `${API_URL_ORIGIN}${API_URL_PATH}?Id=${PARTNER_ID}&MappingList=${mappingListId}&MappingKey=${mappingKey}&LanguageKey=${languageKey}`;
+        url = `${API_URL_ORIGIN}${API_URL_PATH}?Id=${idValue.join(':')}&MappingList=${mappingListId}&MappingKey=${mappingKey}&LanguageKey=${languageKey}`;
     }
     else {
-        url = `${API_URL_ORIGIN}${API_URL_PATH}?Id=${PARTNER_ID}&MappingList=${mappingListId}&MappingKey=${mappingKey}`;
+        url = `${API_URL_ORIGIN}${API_URL_PATH}?Id=${idValue.join(':')}&MappingList=${mappingListId}&MappingKey=${mappingKey}`;
     }
+
     return fetch(url)
         .then(function (response) {
             if (!response.ok) {
@@ -7409,6 +7418,8 @@ async function processRun(run, languageKey, triggeredRules) {
 
     if (run && run.tool && run.tool.extensions && run.tool.extensions) {
         for (const extension of run.tool.extensions) {
+            if (!extension.rules || !Array.isArray(extension.rules)) continue;
+
             for (const rule of extension.rules) {
                 try {
                     await processRule(rule, languageKey, triggeredRules);
