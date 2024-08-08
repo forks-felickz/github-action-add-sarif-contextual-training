@@ -37,7 +37,7 @@ This Action currently supports adding training material based on CWE references 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Import Results
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: sarif/findings.processed.sarif
 ```
@@ -63,7 +63,7 @@ This Action currently supports adding training material based on CWE references 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Import Results
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ./processed-sarifs
 ```
@@ -89,7 +89,7 @@ This Action currently supports adding training material based on CWE references 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Import Results
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ./processed-sarifs
 ```
