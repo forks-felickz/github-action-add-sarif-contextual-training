@@ -32,8 +32,6 @@ async function getPathType(path) {
 async function getDirectoryFiles(inDirPath) {
     const dirents = await fs.readdir(inDirPath, { withFileTypes: true });
     const files = await Promise.all(dirents.map((dirent) => {
-        // Check for possible path traversal attack and mitigate
-        if (dirent.name.includes('..')) throw new Error('Invalid file name');
         const direntPath = path.resolve(inDirPath, dirent.name);
         return dirent.isDirectory() ? getDirectoryFiles(direntPath) : direntPath;
     }));
@@ -42,8 +40,6 @@ async function getDirectoryFiles(inDirPath) {
 
 async function loadFile(inFilePath) {
     logger.debug(`Loading file: ${inFilePath}`);
-    // Check for possible path traversal attack and mitigate
-    if (inFilePath.includes('..')) throw new Error('Invalid file path');
     const sarifText = await fs.readFile(inFilePath, 'utf-8');
     const sarif = JSON.parse(sarifText);
     return sarif;
