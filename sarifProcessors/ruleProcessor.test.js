@@ -552,6 +552,36 @@ test('ruleProcessor should recover missing entries after a partial failure', asy
     warning.mockRestore();
 });
 
+test('ruleProcessor should normalize URLs before suppressing duplicate phrase entries', async () => {
+    const run = {
+        tool: {
+            driver: {
+                name: 'Example SAST',
+                rules: [{
+                    id: 'CWE-79 SQL injection',
+                    help: {
+                        text: 'Build your secure coding skills and defend your code:\n\n[CWE 79] Existing training [Try this challenge in Secure Code Warrior](https://scw.io/path%20traversal)',
+                        markdown: '## Build your secure coding skills and defend your code\n\n#### [CWE 79] Existing training\n\n[Try this challenge in Secure Code Warrior](https://scw.io/path%20traversal)'
+                    }
+                }]
+            }
+        }
+    };
+    directLinking.getTrainingData.mockResolvedValue({
+        name: 'Path traversal',
+        description: 'bbb',
+        url: 'https://scw.io/path traversal',
+        videos: []
+    });
+
+    await ruleProcessor.processRun(run, null, new Map([
+        ['CWE-79 SQL injection', true]
+    ]));
+
+    expect(run.tool.driver.rules[0].help.markdown).not.toContain('Matched on');
+    expect(directLinking.getTrainingData).toHaveBeenCalledTimes(1);
+});
+
 test('ruleProcessor should enrich only the referenced component when rule IDs collide', async () => {
     const run = {
         tool: {

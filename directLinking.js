@@ -11,6 +11,7 @@ const MAX_ATTEMPTS = 3;
 const MIN_REQUEST_INTERVAL_MS = 100;
 const REQUEST_TIMEOUT_MS = 10000;
 const RETRY_BASE_DELAY_MS = 250;
+const MAX_RETRY_DELAY_MS = 5000;
 
 const responseCache = new Map();
 let lastRequestStartedAt = 0;
@@ -45,7 +46,8 @@ function buildUrl(mappingListId, mappingKey, languageKey) {
 function getRetryDelay(response, attempt) {
     const retryAfter = response.headers && response.headers.get('retry-after');
     if (retryAfter && /^\d+(\.\d+)?$/.test(retryAfter)) {
-        return Math.min(Number(retryAfter) * 1000, 5000);
+        const retryDelay = Number(retryAfter) * 1000;
+        return retryDelay <= MAX_RETRY_DELAY_MS ? retryDelay : null;
     }
 
     return RETRY_BASE_DELAY_MS * (2 ** attempt);
@@ -102,7 +104,11 @@ async function fetchTrainingData(url) {
             throw error;
         }
 
-        await sleep(getRetryDelay(response, attempt));
+        const retryDelay = getRetryDelay(response, attempt);
+        if (retryDelay === null) {
+            throw error;
+        }
+        await sleep(retryDelay);
     }
 
     throw lastError;

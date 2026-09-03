@@ -62,8 +62,6 @@ generated SARIF directory, and then upload the processed results:
         with:
           inputSarifFile: sarif-results
           outputSarifFile: processed-sarifs
-          # Optional. Use a key returned by the Direct Linking API language-keys endpoint.
-          languageKey: javascript
 
       - name: Upload enriched SARIF
         uses: github/codeql-action/upload-sarif@v4
@@ -75,6 +73,9 @@ generated SARIF directory, and then upload the processed results:
 The action preserves the `CodeQL` tool name by default. Set
 `renameCodeQLTool: true` only when targeting older code scanning behavior that
 requires the historical `GitHub CodeQL` compatibility workaround.
+For a single-language job, you can also set `languageKey` to the matching Secure
+Code Warrior language or framework key. A language matrix should define a
+separate `languageKey` value for each entry.
 
 ### Individual SARIF file
 

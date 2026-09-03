@@ -61,13 +61,14 @@ async function processRule(rule, languageKey, triggeredRules) {
                 console.warn(`Secure Code Warrior returned incomplete training data for ${match.displayReference}`);
                 continue;
             }
+            const normalizedTrainingUrl = trainingData.url.replace(/ /g, '%20');
 
             // CWE mappings are more precise than phrase matches, so suppress phrase
             // entries that resolve to training already added for this rule.
-            if (match.referenceType === 'phrase' && alreadyAddedTrainingUrls.has(trainingData.url)) {
+            if (match.referenceType === 'phrase' && alreadyAddedTrainingUrls.has(normalizedTrainingUrl)) {
                 continue;
             }
-            alreadyAddedTrainingUrls.add(trainingData.url);
+            alreadyAddedTrainingUrls.add(normalizedTrainingUrl);
 
             if (!rule.help) rule.help = {
                 // if `help` is not present but fullDescription is present
@@ -83,7 +84,7 @@ async function processRule(rule, languageKey, triggeredRules) {
                 helpProcessor.appendHeader(rule.help);
             }
 
-            helpProcessor.appendTrainingData(rule.help, trainingData.name, trainingData.description, trainingData.url, trainingData.videos, match.displayReference);
+            helpProcessor.appendTrainingData(rule.help, trainingData.name, trainingData.description, normalizedTrainingUrl, trainingData.videos, match.displayReference);
         }
     }
 }

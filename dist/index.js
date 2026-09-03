@@ -18,6 +18,7 @@ const MAX_ATTEMPTS = 3;
 const MIN_REQUEST_INTERVAL_MS = 100;
 const REQUEST_TIMEOUT_MS = 10000;
 const RETRY_BASE_DELAY_MS = 250;
+const MAX_RETRY_DELAY_MS = 5000;
 
 const responseCache = new Map();
 let lastRequestStartedAt = 0;
@@ -52,7 +53,8 @@ function buildUrl(mappingListId, mappingKey, languageKey) {
 function getRetryDelay(response, attempt) {
     const retryAfter = response.headers && response.headers.get('retry-after');
     if (retryAfter && /^\d+(\.\d+)?$/.test(retryAfter)) {
-        return Math.min(Number(retryAfter) * 1000, 5000);
+        const retryDelay = Number(retryAfter) * 1000;
+        return retryDelay <= MAX_RETRY_DELAY_MS ? retryDelay : null;
     }
 
     return RETRY_BASE_DELAY_MS * (2 ** attempt);
@@ -109,7 +111,11 @@ async function fetchTrainingData(url) {
             throw error;
         }
 
-        await sleep(getRetryDelay(response, attempt));
+        const retryDelay = getRetryDelay(response, attempt);
+        if (retryDelay === null) {
+            throw error;
+        }
+        await sleep(retryDelay);
     }
 
     throw lastError;
@@ -8025,13 +8031,14 @@ async function processRule(rule, languageKey, triggeredRules) {
                 console.warn(`Secure Code Warrior returned incomplete training data for ${match.displayReference}`);
                 continue;
             }
+            const normalizedTrainingUrl = trainingData.url.replace(/ /g, '%20');
 
             // CWE mappings are more precise than phrase matches, so suppress phrase
             // entries that resolve to training already added for this rule.
-            if (match.referenceType === 'phrase' && alreadyAddedTrainingUrls.has(trainingData.url)) {
+            if (match.referenceType === 'phrase' && alreadyAddedTrainingUrls.has(normalizedTrainingUrl)) {
                 continue;
             }
-            alreadyAddedTrainingUrls.add(trainingData.url);
+            alreadyAddedTrainingUrls.add(normalizedTrainingUrl);
 
             if (!rule.help) rule.help = {
                 // if `help` is not present but fullDescription is present
@@ -8047,7 +8054,7 @@ async function processRule(rule, languageKey, triggeredRules) {
                 helpProcessor.appendHeader(rule.help);
             }
 
-            helpProcessor.appendTrainingData(rule.help, trainingData.name, trainingData.description, trainingData.url, trainingData.videos, match.displayReference);
+            helpProcessor.appendTrainingData(rule.help, trainingData.name, trainingData.description, normalizedTrainingUrl, trainingData.videos, match.displayReference);
         }
     }
 }

@@ -74,6 +74,16 @@ test('directLinking should retry rate-limited requests', async () => {
     expect(fetch).toHaveBeenCalledTimes(2);
 });
 
+test('directLinking should not retry before a long Retry-After delay expires', async () => {
+    fetch.mockResolvedValue(createResponse(429, null, '60'));
+
+    await expect(directLinking.getTrainingData('cwe', '79', null)).rejects.toMatchObject({
+        status: 429
+    });
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+});
+
 test('directLinking should retry any server error', async () => {
     fetch
         .mockResolvedValueOnce(createResponse(520, null, '0'))
